@@ -58,14 +58,14 @@ restore_context:
     .type start_context, @function
 
 start_context:
-    movq (%rax), %rbx       /*恢复栈帧*/
-    movq 8(%rax), %rsp
-    movq 16(%rax), %rbp
-    movq 24(%rax), %r12
-    movq 32(%rax), %r13
-    movq 40(%rax), %r14
-    movq 48(%rax), %r15
-    jmp *56(%rax)           /*恢复执行*/
+    movq (%r10), %rbx       /*恢复栈帧*/
+    movq 8(%r10), %rsp
+    movq 16(%r10), %rbp
+    movq 24(%r10), %r12
+    movq 32(%r10), %r13
+    movq 40(%r10), %r14
+    movq 48(%r10), %r15
+    jmp *56(%r10)           /*恢复执行*/
     
 
 #else

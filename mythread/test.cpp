@@ -2,6 +2,28 @@
 #include<unistd.h>
 #include"mythread.h"
 
+Scheduler sched;
+
+void *func(int id){
+    printf("This is thread A. ID: %d \n", id);
+    while(1){
+        printf("Hello! I am yuhaoxiao. ID: %d\n", id);
+        sched.switch_to_admin(id);
+        sleep(1);
+    }
+    return NULL;
+}
+
+int main(){
+    
+    for(int i=0;i<4;i++){
+        sched.add_thread(i,func);
+    }
+    sched.work();
+    printf("what the fuck...\n");
+    return 0;
+}
+/*
 thread_t thread_main;
 thread_t g_thread_A;
 thread_t g_thread_B;
@@ -34,4 +56,4 @@ int main(){
     thread_destory(&g_thread_A);
     thread_destory(&g_thread_B);
     return 0;
-}
+}*/

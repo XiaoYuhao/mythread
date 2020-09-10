@@ -1,4 +1,6 @@
-
+#include<vector>
+#include<cstdlib>
+using namespace std;
 
 enum register_tt{
     rbx,
@@ -16,11 +18,39 @@ typedef struct{
 }ctx_buf_t;
 
 typedef void *(*thread_handler_t)(int id);
+typedef int thread_status;
+const int INIT = 0;
+const int RUNABLE = 1;
+const int WAIT = 2;
+
+class Thread{
+/*
+    int id;
+    void *stack;
+    void *stack_top;
+    thread_handler_t handler;
+    ctx_buf_t ctx*/
+public:
+    int id;
+    void *stack;
+    void *stack_top;
+    thread_handler_t handler;
+    ctx_buf_t ctx;
+    thread_status status;
+    Thread(){};
+    Thread(int id, thread_handler_t handler);
+    ~Thread();
+    void start();
+    ctx_buf_t* context();
+};
+
+
 typedef struct{
     int id;
     void *stack;
     thread_handler_t handler;
     ctx_buf_t ctx;
+    thread_status status;
 }thread_t;
 
 //extern int save_context(ctx_buf_t *from);
@@ -34,9 +64,14 @@ int thread_start(thread_t *t);
 
 class Scheduler
 {
-    int thread_num;
-    thread_t admin;
+    Thread admin;
+    //vector<Thread> tasks;
+    int num;
+    Thread tasks[10];
 public:
-    Scheduler();
-    void do_switch(thread_t *from, thread_t *to);
+    Scheduler():admin(-1,NULL), num(0){};
+    void work();
+    void add_thread(int id, thread_handler_t handler);
+    void do_switch(Thread &from, Thread &to);
+    void switch_to_admin(int id);
 };
