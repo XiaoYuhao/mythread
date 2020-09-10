@@ -9,14 +9,14 @@ void *func(int id){
     while(1){
         printf("Hello! I am yuhaoxiao. ID: %d\n", id);
         sched.switch_to_admin(id);
-        sleep(1);
+        usleep(1000*100);
     }
     return NULL;
 }
 
 int main(){
     
-    for(int i=0;i<4;i++){
+    for(int i=0;i<50;i++){
         sched.add_thread(i,func);
     }
     sched.work();
