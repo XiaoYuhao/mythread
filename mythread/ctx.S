@@ -9,6 +9,13 @@
     ctx_buf[6]: r15
     ctx_buf[7]: Program Counter
 */
+#if defined(__amd64__) || defined(__x86_64__)
+    
+/*save_context*/
+    .text
+    .align 4
+    .globl save_context
+    .type save_context, @function
 
 /*rdi保存参数：from线程上下文buffer*/
 save_context:
@@ -27,6 +34,11 @@ save_context:
     movq %rsi, 56(%rdi)     /*线程恢复执行的地址，即save_context调用的下一条地址*/
     ret                     /*ret指令会跳转到返回地址处，也是save_context调用的下一条地址*/
 
+/*restore_context*/
+    .text
+    .align 4
+    .globl restore_context
+    .type restore_context, @function
 
 restore_context:
     movl $1, %eax           /*设置返回值为1*/
@@ -39,3 +51,23 @@ restore_context:
     movq 48(%rdi), %r15
     jmp *56(%rdi)           /*恢复执行*/
 
+/*start_context*/
+    .text
+    .align 4
+    .globl start_context
+    .type start_context, @function
+
+start_context:
+    movq (%rax), %rbx       /*恢复栈帧*/
+    movq 8(%rax), %rsp
+    movq 16(%rax), %rbp
+    movq 24(%rax), %r12
+    movq 32(%rax), %r13
+    movq 40(%rax), %r14
+    movq 48(%rax), %r15
+    jmp *56(%rax)           /*恢复执行*/
+    
+
+#else
+#error "Linux cpu arch not supported"
+#endif
