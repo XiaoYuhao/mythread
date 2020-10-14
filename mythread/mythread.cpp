@@ -51,7 +51,7 @@ Thread::Thread(const Thread &t){          //在有内存申请和释放的类中
       tasks初始化的时候尽量开辟足够大的size，不然扩充的时候会造成大量的拷贝，效率低下且容易出现错误。*/
 }
 
-/*下面是移动构造函数的实现*/
+/*下面是移动构造函数的实现，可以看到移动构造函数中，不需要再重新申请新的内存空间，只需要将临时变量的指针置为NULL即可*/
 Thread::Thread(Thread &&t) noexcept {
     memcpy(this, &t, sizeof(Thread));
     t.stack_top = NULL;
