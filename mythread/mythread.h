@@ -31,9 +31,10 @@ class Thread{
 public:
     ctx_buf_t ctx;
     thread_status status;
-    Thread(){};
+    Thread(){}; 
     Thread(int id, thread_handler_t handler);
-    Thread(const Thread &t);
+    Thread(const Thread &t); //拷贝构造函数
+    Thread(Thread &&t) noexcept;      //移动构造函数
     ~Thread();
     void start();
 };
