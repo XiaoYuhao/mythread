@@ -1,15 +1,107 @@
-#include<stdio.h>
-#include<unistd.h>
+#include <sys/types.h>  
+#include <sys/socket.h>  
+#include <netinet/in.h>  
+#include <arpa/inet.h>  
+#include <assert.h>  
+#include <stdio.h>  
+#include <unistd.h>  
+#include <errno.h>  
+#include <string.h>  
+#include <string>
+#include <map>
+#include <fcntl.h>  
+#include <stdlib.h>  
+#include <sys/epoll.h>  
+#include <signal.h>  
+#include <sys/wait.h>  
+#include <sys/stat.h>
+#include <sys/mman.h>
+
 #include"mythread.h"
+
+int startup(int _port){
+    int sock=socket(AF_INET,SOCK_STREAM,0);
+    if(sock<0){
+        perror("socket");
+        exit(1);
+    }
+    /*
+    int val;
+    if(val=fcntl(sock,F_GETFL,0)<0){
+        perror("fcntl");
+        close(sock);
+        return 0;
+    }
+    if(fcntl(sock,F_SETFL,val|O_NONBLOCK)<0){
+        perror("fcntl");
+        close(sock);
+        return 0;
+    }
+    */
+    int opt=1;
+    setsockopt(sock,SOL_SOCKET,SO_REUSEADDR,(const void*)&opt,sizeof(opt));
+
+    struct sockaddr_in local;
+    local.sin_family=AF_INET;
+    local.sin_port=htons(_port);
+    local.sin_addr.s_addr=htonl(INADDR_ANY);
+    socklen_t len=sizeof(local);
+
+    if(bind(sock,(struct sockaddr*)&local,len)<0){
+        perror("bind");
+        exit(2);
+    }
+    
+    if(listen(sock,5)<0){
+        perror("listen");
+        exit(3);
+    }
+
+    return sock;
+}
+
+void addfd(int epollfd, int fd){
+    epoll_event event;
+    event.data.fd = fd;
+    event.events = EPOLLIN | EPOLLET;
+    epoll_ctl(epollfd, EPOLL_CTL_ADD, fd, &event);
+}
+
+void removefd(int epollfd, int fd){
+    epoll_ctl(epollfd, EPOLL_CTL_DEL, fd, 0);
+    close(fd);
+}
 
 Scheduler sched;
 
-void *func(int id){
-    printf("This is thread A. ID: %d \n", id);
+void *func(int fd){
+    printf("This is thread A. para: %d \n", fd);
     while(1){
-        printf("Hello! I am yuhaoxiao. ID: %d\n", id);
-        sched.switch_to_admin(id);
+        printf("Hello! I am yuhaoxiao. para: %d\n", fd);
+        sched.switch_to_admin();
         usleep(1000*100);
+    }
+    /*
+    char *buf[1024];
+    while(true){
+        int ret = read(fd, buf, sizeof(buf));
+        if(ret<0){
+            printf("read error.\n");
+            exit(0);
+        }
+        printf("recv message : %s \n", buf);
+    }*/
+    return NULL;
+}
+
+void *server(int para1){
+    int listen_sock = startup(11234);
+    struct sockaddr_in remote;
+    socklen_t len=sizeof(struct sockaddr_in);
+    while(true){
+        int client_sock = accept(listen_sock, (struct sockaddr*)&remote, &len);
+        sched.add_thread(func, client_sock);
+
     }
     return NULL;
 }
@@ -17,8 +109,9 @@ void *func(int id){
 int main(){
     
     for(int i=0;i<50;i++){
-        sched.add_thread(i,func);
+        sched.add_thread(func,521);
     }
+    //sched.add_thread(server, 0);
     sched.work();
     printf("what the fuck...\n");
     return 0;

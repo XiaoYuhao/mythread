@@ -1,5 +1,6 @@
 #include<vector>
 #include<cstdlib>
+#include<sys/epoll.h>
 using namespace std;
 
 enum register_tt{
@@ -24,7 +25,8 @@ const int RUNABLE = 1;
 const int WAIT = 2;
 
 class Thread{
-    int tid;
+    int tid;                            //协程ID号
+    int para1;                          //可带一个参数
     void *stack;
     void *stack_top;
     thread_handler_t handler;
@@ -32,22 +34,38 @@ public:
     ctx_buf_t ctx;
     thread_status status;
     Thread(){};
-    Thread(int id, thread_handler_t handler);
-    Thread(const Thread &t);
+    Thread(int id, thread_handler_t handler, int para);
+    Thread(const Thread &t);            //拷贝构造函数
+    Thread(Thread &&t) noexcept;      //移动构造函数
     ~Thread();
     void start();
+    int get_id();
 };
+
+const int MAX_EVENT_NUM = 10000;
 
 class Scheduler
 {
     Thread admin;
     vector<Thread> tasks;
+    int current_id;
+    int epfd;
+    int routine_count;
 public:
-    Scheduler():admin(-1,NULL){
+    Scheduler():admin(-1,NULL,0),routine_count(0){
         //tasks.reserve(100);
+        epfd = epoll_create(MAX_EVENT_NUM);
     };
+    ~Scheduler();
     void work();
-    void add_thread(int id, thread_handler_t handler);
+    void add_thread(thread_handler_t handler, int para);
     void do_switch(Thread &from, Thread &to);
-    void switch_to_admin(int id);
+    void switch_to_admin();
+    int get_current_id();
+    void add_wait_fd(int fd, int flags);
+};
+
+struct wait_info{
+    int fd;
+    int id;
 };
