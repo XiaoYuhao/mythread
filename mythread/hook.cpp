@@ -6,9 +6,9 @@
 #include<sys/epoll.h>
 #include<dlfcn.h>
 #include<iostream>
-#include"mythread.h"
+#include"myscheduler.h"
 
-extern Scheduler *schedptr;
+
 
 extern "C" {
 
@@ -24,7 +24,7 @@ int read(int fd, void *buf, size_t nbytes){
     }
 
     std::cout<<"Task into Read WAIT status"<<endl;
-    schedptr->add_wait_fd(fd, EPOLLIN);
+    Scheduler::add_wait(fd, EPOLLIN);
     return readcp(fd, buf, nbytes);
 }
 
@@ -41,21 +41,9 @@ int accept(int sockfd, struct sockaddr *cliaddr, socklen_t *addrlen){
     }
 
     std::cout<<"Task into Accept WAIT status"<<endl;
-    schedptr->add_wait_fd(sockfd, EPOLLIN);
+    Scheduler::add_wait(sockfd, EPOLLIN);
     return acceptcp(sockfd, cliaddr, addrlen);
 }
 
 }
 
-
-
-/*
-int printf(const char *format, ...){
-    int (*printfcp)(const char *format, ...);
-    printfcp = (int (*)(const char *format, ...))dlsym(RTLD_NEXT, "vprintf");
-
-    printfcp("hook successful!\n");
-
-
-    return 1;
-}*/
