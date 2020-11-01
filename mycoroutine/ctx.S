@@ -57,15 +57,39 @@ restore_context:
     .globl start_context
     .type start_context, @function
 
-start_context:
+start_context:              /*这里还是有问题，函数返回时会出现Segmentation fault。 已用finish_coroutine函数返回*/
+    movq %rbx, %r9
+    movq %rsp, %r10
+    movq %rbp, %r11
+
     movq (%rsi), %rbx       /*恢复栈帧*/
     movq 8(%rsi), %rsp
-    movq 16(%rsi), %rbp
+    movq 16(%rsi), %rbp    
+    push %r9
+    push %r10
+    push %r11
+    push %r12
+    push %r13
+    push %r14
+    push %r15
     movq 24(%rsi), %r12
     movq 32(%rsi), %r13
     movq 40(%rsi), %r14
-    movq 48(%rsi), %r15
-    jmp *56(%rsi)           /*恢复执行*/
+    movq 48(%rsi), %r15     
+
+    call *56(%rsi)           /*恢复执行*/
+
+    pop %r15
+    pop %r14
+    pop %r13
+    pop %r12
+    pop %rbp
+    pop %r10                /*注意此处不可直接pop %rsp，因为pop和push指令本身就会改变rsp的值*/
+    pop %rbx
+
+    movq %r10, %rsp
+
+    ret
     
 
 #else

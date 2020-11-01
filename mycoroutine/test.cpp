@@ -92,6 +92,8 @@ void *func(int fd){
         printf("recv message : %s \n", buf);
         ret = send(fd, sendbuf, strlen(sendbuf), MSG_DONTWAIT);
     }
+    close(fd);
+    Scheduler::finish_coroutine();
     return NULL;
 }
 
@@ -101,10 +103,15 @@ void *server(int para1){
     socklen_t len=sizeof(struct sockaddr_in);
     while(true){
         int client_sock = accept(listen_sock, (struct sockaddr*)&remote, &len);
+        if(client_sock<=0){
+            printf("accept error.\n");
+            break;
+        }
         Scheduler::add_coroutine(func, client_sock);
         printf("client fd :%d is connect.\n", client_sock);
 
     }
+    //Scheduler::finish_coroutine();
     return NULL;
 }
 
