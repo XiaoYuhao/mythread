@@ -24,7 +24,7 @@ Thread::Thread(int id, thread_handler_t handler, int para){
 
     status = INIT;
 
-    printf("ID: %d thread has been created...\n", tid);
+    //printf("ID: %d thread has been created...\n", tid);
 }
 
 /*下面这个拷贝构造函数，每次拷贝都要重新分配空间。如果对于拷贝的对象是一个临时对象（右值对象）
@@ -47,7 +47,7 @@ Thread::Thread(const Thread &t){          //在有内存申请和释放的类中
     //handler = t.handler;
     ctx.buffer[rsp] = (long)stack;              //这是新的栈，不改这个会出现Segmentation fault
     //ctx.buffer[pc_addr] = (long)handler;
-    printf("ID: %d thread has been created...\n", tid);
+    //printf("ID: %d thread has been created...\n", tid);
 
     /*从拷贝构造函数可以看出，每次都需要重新开辟一个新栈，然后将原来栈的数据拷贝过去，效率低下。所以最好避免这样的拷贝，
       tasks初始化的时候尽量开辟足够大的size，不然扩充的时候会造成大量的拷贝，效率低下且容易出现错误。*/
@@ -57,11 +57,11 @@ Thread::Thread(const Thread &t){          //在有内存申请和释放的类中
 Thread::Thread(Thread &&t) noexcept {
     memcpy(this, &t, sizeof(Thread));
     t.stack_top = NULL;
-    printf("ID: %d thread has been move copy...\n", tid);
+    //printf("ID: %d thread has been move copy...\n", tid);
 }
 
 Thread::~Thread(){
-    printf("ID: %d thread has been destory...\n", tid);
+    //printf("ID: %d thread has been destory...\n", tid);
     free(stack_top);
 }
 
@@ -124,6 +124,7 @@ void Scheduler::work(){
         for(int i=0;i<num;i++){
             wait_info *wi = (wait_info *)events[i].data.ptr;
             tasks[wi->id].status = RUNABLE;                   //将协程状态置为RUNABLE，就绪态 
+            printf("Id: %d is runable...\n", wi->id);
         }
 
         for(auto &t: tasks){
@@ -131,8 +132,8 @@ void Scheduler::work(){
                 t.status = RUNABLE;
                 int ret = save_context(&admin.ctx);
                 if(ret == 0){
-                    printf("start...\n");
                     current_id = t.get_id();
+                    printf("ID :%d start...\n", current_id);
                     t.start();
                 }
             }
@@ -149,3 +150,13 @@ void Scheduler::work(){
 Scheduler::~Scheduler(){
     close(epfd);
 }
+
+Scheduler* Scheduler::create(){
+    if(_instance == NULL){
+        _instance = new Scheduler;
+    }   
+    return _instance;
+}
+
+Scheduler* Scheduler::_instance = NULL;
+Scheduler* schedptr = Scheduler::create();

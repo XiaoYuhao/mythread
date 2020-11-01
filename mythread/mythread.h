@@ -51,11 +51,18 @@ class Scheduler
     int current_id;
     int epfd;
     int routine_count;
+    Scheduler():admin(-1,NULL,0),routine_count(0),start(false){
+        epfd = epoll_create(MAX_EVENT_NUM);
+    };
+    static Scheduler* _instance;
+    int start;
 public:
+    static Scheduler* create();
+    /*
     Scheduler():admin(-1,NULL,0),routine_count(0){
         //tasks.reserve(100);
         epfd = epoll_create(MAX_EVENT_NUM);
-    };
+    };*/
     ~Scheduler();
     void work();
     void add_thread(thread_handler_t handler, int para);

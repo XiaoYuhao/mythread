@@ -1,38 +1,38 @@
 #include<sys/types.h>
-#include<stdlib.h>
+#include<stdio.h>
+#include<sys/socket.h>
 #include<netinet/in.h>
-#include<arpa/inet.h>
-#include<string.h>
 #include<fcntl.h>
-#include<sys/shm.h>
-#include<time.h>
-#include<signal.h>
-#include<errno.h>
 #include<sys/epoll.h>
 #include<dlfcn.h>
 #include<iostream>
 #include"mythread.h"
 
-extern Scheduler sched;
+extern Scheduler *schedptr;
 
-size_t read(int fd, void *buf, size_t nbytes){
+extern "C" {
+
+int read(int fd, void *buf, size_t nbytes){
     int flags = fcntl(fd, F_GETFL, 0);
 
     size_t (*readcp)(int fd, void *buf, size_t nbytes);
     readcp = (size_t (*)(int fd, void *buf, size_t nbytes))dlsym(RTLD_NEXT, "read");
-
+    
     if(flags&O_NONBLOCK){
         return readcp(fd, buf, nbytes);
+        return 0;
     }
 
-    sched.add_wait_fd(fd, EPOLLIN | EPOLLET);
-    std::cout<<"Task into read WAIT status"<<endl;
+    std::cout<<"Task into Read WAIT status"<<endl;
+    schedptr->add_wait_fd(fd, EPOLLIN);
     return readcp(fd, buf, nbytes);
 }
 
+
+
 int accept(int sockfd, struct sockaddr *cliaddr, socklen_t *addrlen){
     int flags = fcntl(sockfd, F_GETFL, 0);
-
+    
     int (*acceptcp)(int sockfd, struct sockaddr *cliaddr, socklen_t *addrlen);
     acceptcp = (int (*)(int sockfd, struct sockaddr *cliaddr, socklen_t *addrlen))dlsym(RTLD_NEXT, "accept");
 
@@ -40,11 +40,16 @@ int accept(int sockfd, struct sockaddr *cliaddr, socklen_t *addrlen){
         return acceptcp(sockfd, cliaddr, addrlen);
     }
 
-    sched.add_wait_fd(sockfd, EPOLLIN | EPOLLET);
-    std::cout<<"Task into accept WAIT status"<<endl;
+    std::cout<<"Task into Accept WAIT status"<<endl;
+    schedptr->add_wait_fd(sockfd, EPOLLIN);
     return acceptcp(sockfd, cliaddr, addrlen);
 }
 
+}
+
+
+
+/*
 int printf(const char *format, ...){
     int (*printfcp)(const char *format, ...);
     printfcp = (int (*)(const char *format, ...))dlsym(RTLD_NEXT, "vprintf");
@@ -53,4 +58,4 @@ int printf(const char *format, ...){
 
 
     return 1;
-}
+}*/

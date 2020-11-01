@@ -72,25 +72,34 @@ void removefd(int epollfd, int fd){
     close(fd);
 }
 
-Scheduler sched;
+extern Scheduler *schedptr;
 
 void *func(int fd){
+    /*
     printf("This is thread A. para: %d \n", fd);
     while(1){
         printf("Hello! I am yuhaoxiao. para: %d\n", fd);
-        sched.switch_to_admin();
+        schedptr->switch_to_admin();
         usleep(1000*100);
-    }
-    /*
-    char *buf[1024];
+    }*/
+    
+    char buf[1024];
+    char sendbuf[1024];
+    sprintf(sendbuf, "server has received message.\n");
     while(true){
-        int ret = read(fd, buf, sizeof(buf));
+        //printf("come into read function.\n");
+        size_t ret = read(fd, (void*)buf, sizeof(buf));
         if(ret<0){
             printf("read error.\n");
             exit(0);
         }
+        if(ret==0){
+            printf("client quit.\n");
+            break;
+        }
         printf("recv message : %s \n", buf);
-    }*/
+        ret = send(fd, sendbuf, strlen(sendbuf), MSG_DONTWAIT);
+    }
     return NULL;
 }
 
@@ -100,19 +109,20 @@ void *server(int para1){
     socklen_t len=sizeof(struct sockaddr_in);
     while(true){
         int client_sock = accept(listen_sock, (struct sockaddr*)&remote, &len);
-        sched.add_thread(func, client_sock);
+        schedptr->add_thread(func, client_sock);
+        printf("client fd :%d is connect.\n", client_sock);
 
     }
     return NULL;
 }
 
 int main(){
-    
+    /*
     for(int i=0;i<50;i++){
-        sched.add_thread(func,521);
-    }
-    //sched.add_thread(server, 0);
-    sched.work();
+        schedptr->add_thread(func,521);
+    }*/
+    schedptr->add_thread(server, 0);
+    schedptr->work();
     printf("what the fuck...\n");
     return 0;
 }
