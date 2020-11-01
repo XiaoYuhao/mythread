@@ -12,7 +12,7 @@ CXX		:= g++
 LIBS	:= 
 LDFLAGS	:= -ldl
 DEFINES	:=
-CFLAGS	:= -shared -fpic
+CFLAGS	:= -g -shared -fpic
 CXXFLAGS:= -std=c++11
  
 .PHONY: clean, install

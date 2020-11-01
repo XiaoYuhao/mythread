@@ -21,6 +21,7 @@ typedef int coroutine_status;
 const int INIT = 0;
 const int RUNABLE = 1;
 const int WAIT = 2;
+const int DEAD = 3;
 
 class Coroutine{
     int tid;                            //协程ID号
@@ -29,12 +30,14 @@ class Coroutine{
     void *stack_top;
     task_handler_t handler;
 public:
-    ctx_buf_t ctx;
+    ctx_buf_t ctx;                      //寄存器上下文
     coroutine_status status;
     Coroutine(){};
     Coroutine(int id, task_handler_t handler, int para);
     Coroutine(const Coroutine &t);            //拷贝构造函数
     Coroutine(Coroutine &&t) noexcept;      //移动构造函数
+    Coroutine& operator=(Coroutine &&t) noexcept;
+    Coroutine& operator=(const Coroutine &t);
     ~Coroutine();
     void start();
     int get_id();

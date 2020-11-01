@@ -27,12 +27,17 @@ Scheduler* Scheduler::create(){
 }
 
 void Scheduler::add_task(task_handler_t handler, int para){
-    tasks.emplace_back(coroutine_count++, handler, para);         /*push_back会先构造临时变量，再拷贝构造进vector，而emplace_back则原地构造，
-                                                                另外需要注意的是tasks初始大小很小，扩充大小的时候需要拷贝原来的元素过去，再
-                                                                调用析构函数，需要注意，尤其是有内存申请和释放情况下。*/
+    /*
+    tasks.emplace_back(coroutine_count++, handler, para);       //push_back会先构造临时变量，再拷贝构造进vector，而emplace_back则原地构造，
+                                                                //另外需要注意的是tasks初始大小很小，扩充大小的时候需要拷贝原来的元素过去，再
+                                                                //调用析构函数，需要注意，尤其是有内存申请和释放情况下。
+    */
+   tasks[coroutine_count] = Coroutine(coroutine_count, handler, para);
+   coroutine_count++;
 }
 
 void Scheduler::do_switch(Coroutine &from, Coroutine &to){
+    //printf("from ID: %d switch to ID :%d \n", from.get_id(), to.get_id());
     int ret = save_context(&from.ctx);       /**/
     if(ret == 0){
         current_id = to.get_id();
@@ -45,8 +50,8 @@ void Scheduler::do_switch(Coroutine &from, Coroutine &to){
 }
 
 void Scheduler::switch_to_admin(){
-    printf("from ID: %d switch to admin...\n", current_id);
-    Coroutine &from = tasks[current_id];
+    //printf("from ID: %d switch to admin...\n", current_id);
+    Coroutine &from = tasks[current_id];            //这里引入vector erase之后出现了大bug...
     do_switch(from, admin);
 }
 
@@ -81,23 +86,51 @@ void Scheduler::work(){
             printf("Id: %d is runable...\n", wi->id);
         }
 
-        for(auto &t: tasks){
-            if(t.status == INIT){
-                t.status = RUNABLE;
+        for(auto t = tasks.begin(); t!=tasks.end();){
+            if((*t).second.status == INIT){
+                (*t).second.status = RUNABLE;
                 int ret = save_context(&admin.ctx);
                 if(ret == 0){
-                    current_id = t.get_id();
+                    current_id = (*t).first;
                     printf("ID :%d start...\n", current_id);
-                    t.start();
+                    (*t).second.start();
+                    switch_to_admin();
                 }
             }
-            else if(t.status == RUNABLE){
-                do_switch(admin,t);
+            else if((*t).second.status == RUNABLE){
+                do_switch(admin, (*t).second);
             }
-            else{
+            if((*t).second.status == DEAD){
+                printf("ID :%d task is dead.\n", (*t).first);
+                t = tasks.erase(t);
+                continue;
+            }
+            t++;
+        }
+        if(tasks.empty()){
+            printf("tasks queue is empty...\n");
+            break;
+        }
+        /*
+        for(auto iter = tasks.begin(); iter!=tasks.end();iter++){
+            if((*iter).status == INIT){
+                (*iter).status = RUNABLE;
+                int ret = save_context(&admin.ctx);
+                if(ret == 0){
+                    current_id = (*iter).get_id();
+                    printf("ID :%d start...\n", current_id);
+                    (*iter).start();
+                    switch_to_admin();
+                }
+            }
+            else if((*iter).status == RUNABLE){
+                do_switch(admin,(*iter));
+            }
+            if((*iter).status == DEAD){
                 continue;
             }
         }
+        */
     } 
 }
 
@@ -119,4 +152,9 @@ void Scheduler::add_wait(int fd, int flags){
 
 void Scheduler::del_wait(int fd){
     _instance->del_wait_fd(fd);
+}
+
+void Scheduler::finish_coroutine(){
+    _instance->tasks[_instance->current_id].status = DEAD;
+    _instance->switch_to_admin();
 }

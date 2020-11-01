@@ -2,6 +2,7 @@
 #define _MY_SCHEDULER_H_
 
 #include<vector>
+#include<map>
 #include<cstdlib>
 #include<sys/epoll.h>
 #include"mycoroutine.h"
@@ -12,7 +13,7 @@ const int MAX_EVENT_NUM = 10000;
 class Scheduler
 {
     Coroutine admin;
-    vector<Coroutine> tasks;
+    map<int, Coroutine> tasks;
     int current_id;
     int epfd;
     int coroutine_count;
@@ -33,6 +34,7 @@ public:
     static void start();
     static void add_wait(int fd, int flags);
     static void del_wait(int fd);
+    static void finish_coroutine();
 };
 
 struct wait_info{
