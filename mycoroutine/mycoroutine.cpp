@@ -106,7 +106,7 @@ Coroutine::~Coroutine(){
 }
 
 void Coroutine::start(){
-    __asm__("movq %0, %%rsi;"::"r"(&ctx):"%rsi");       /*先将寄存器信息地址写入r10寄存器，因为不能用start_context的参数传递
+    __asm__("movq %0, %%rsi;"::"r"(&ctx):"%rsi");       /*先将寄存器信息地址写入rsi寄存器，因为不能用start_context的参数传递
                                                           start_context的参数是传给handler的参数，不能动*/
     
     start_context(para1);                               /*tid会保存在edi寄存器中，handler函数会取出edi作为其第一个参数，可变
