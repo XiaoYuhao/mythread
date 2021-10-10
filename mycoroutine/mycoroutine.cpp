@@ -17,7 +17,7 @@ Coroutine::Coroutine(int id, task_handler_t handler, int para){
     stack_top = malloc(stack_size);       //注意，这里的stack_top是栈可用空间最顶部（栈由高到低生长）
     para1 = para;
     tid = id;
-    stack = stack_top + stack_size;          //指向栈的底部，ebp
+    stack = stack_top + stack_size - 1;          //指向栈的底部，ebp
     this->handler = handler;
     memset(&ctx, 0, sizeof(ctx_buf_t));
     ctx.buffer[rsp] = (long)stack;
@@ -44,7 +44,7 @@ Coroutine::Coroutine(const Coroutine &t){          //在有内存申请和释放
     para1 = t.para1;           
     tid = t.tid;
     memcpy(stack_top, t.stack_top, stack_size);
-    stack = stack_top + stack_size;          
+    stack = stack_top + stack_size - 1;          
     memcpy(&ctx, &t.ctx, sizeof(ctx_buf_t));    //寄存器信息并不都是一样的，栈帧的地址变了，其它一样
     //handler = t.handler;
     ctx.buffer[rsp] = (long)stack;              //这是新的栈，不改这个会出现Segmentation fault
@@ -86,7 +86,7 @@ Coroutine& Coroutine::operator=(const Coroutine &t){
     tid = t.tid;
     status = t.status;
     memcpy(stack_top, t.stack_top, stack_size);
-    stack = stack_top + stack_size;  
+    stack = stack_top + stack_size - 1;  
      
     memcpy(&ctx, &t.ctx, sizeof(ctx_buf_t));    //寄存器信息并不都是一样的，栈帧的地址变了，其它一样
     //handler = t.handler;
